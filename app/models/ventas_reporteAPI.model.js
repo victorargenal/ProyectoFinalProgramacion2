@@ -23,7 +23,7 @@ module.exports = (sequelize, Sequelize) =>{
         },
 
         fecha_venta: {
-            type: Sequelize.DATE,
+            type: Sequelize.DATEONLY,
             defaultValue: Sequelize.NOW,
             allowNull: false
         },

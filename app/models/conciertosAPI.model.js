@@ -30,7 +30,7 @@ module.exports = (sequelize, Sequelize) => {
         },
 
         fecha_concierto: {
-            type: Sequelize.DATE,
+            type: Sequelize.DATEONLY,
             allowNull: false,
         },
 

@@ -38,7 +38,7 @@ module.exports = (sequelize, Sequelize) => {
         },
 
         fecha_emision: {
-            type: Sequelize.DATE,
+            type: Sequelize.DATEONLY,
             defaultValue: Sequelize.NOW,
             allowNull: false
         },
