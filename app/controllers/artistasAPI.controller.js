@@ -100,7 +100,7 @@ exports.buscarNombre = (req, res) => {
     const nombre_artista_recibido = req.params.nombre_artista;
     const condition= {
         nombre_artista: {
-            [Op.iLike]: nombre_artista_recibido
+            [Op.iLike]: `%${nombre_artista_recibido}%`
         }
     }
 
