@@ -50,13 +50,15 @@ exports.buscarFiltrosConcierto = (req, res) => {
 const nombre_artista_concierto_recibido = req.query.nombre_artista_concierto;
 const estado_concierto_recibido = req.query.estado_concierto;
     
-    const condition = {
-        estado_concierto: estado_concierto_recibido
+    const condition = {}
+
+    if(estado_concierto_recibido){
+        condition.estado_concierto = estado_concierto_recibido
     }
 
     if(nombre_artista_concierto_recibido){
         condition.nombre_artista_concierto = {
-            [Op.iLike]: nombre_artista_concierto_recibido
+            [Op.iLike]: `%${nombre_artista_concierto_recibido}%`
         }
     }
 
