@@ -109,7 +109,7 @@ exports.buscarFiltrosBoletos = (req, res) => {
     }
 
     if(nombre_boleto_inventario_recibido){
-        condition.nombre_boleto_inventario = nombre_boleto_inventario_recibidos
+        condition.nombre_boleto_inventario = nombre_boleto_inventario_recibido
     }
 
     Inventario_boletosAPI.findAll({where: condition})
