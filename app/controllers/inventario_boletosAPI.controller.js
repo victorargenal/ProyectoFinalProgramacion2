@@ -94,13 +94,18 @@ exports.eliminarConcierto = (req, res) => {
 };
 
 exports.buscarFiltrosBoletos = (req, res) => {
-    const nombre_boleto_inventario_recibido = req.query.nombre_boleto_inventario;
+    const nombre_boleto_inventario_recibido = req.query.nombre_boleto_inventario; //artista-nombre concierto
     const seccion_recibido = req.query.seccion;
     const estado_ticket_recibido = req.query.estado_ticket;
 
-    const condition = {
-        seccion: seccion_recibido,
-        estado_ticket: estado_ticket_recibido
+    const condition = {}
+
+    if(seccion_recibido){
+        condition.seccion = seccion
+    }
+
+    if(estado_ticket_recibido){
+        condition.estado_ticket = estado_ticket
     }
 
     if(nombre_boleto_inventario_recibido){
