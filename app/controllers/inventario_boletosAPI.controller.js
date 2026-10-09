@@ -101,11 +101,11 @@ exports.buscarFiltrosBoletos = (req, res) => {
     const condition = {}
 
     if(seccion_recibido){
-        condition.seccion = seccion
+        condition.seccion = seccion_recibido
     }
 
     if(estado_ticket_recibido){
-        condition.estado_ticket = estado_ticket
+        condition.estado_ticket = estado_ticket_recibido
     }
 
     if(nombre_boleto_inventario_recibido){
