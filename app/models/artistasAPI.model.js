@@ -29,9 +29,9 @@ module.exports = (sequelize, Sequelize) => {
             allowNull: false
         },
 
-        oyentes_totales: {
-            type: Sequelize.INTEGER,
-            allowNull: false
+        imagen: {
+            type: Sequelize.TEXT,
+            allowNull: true
         }
 
     },

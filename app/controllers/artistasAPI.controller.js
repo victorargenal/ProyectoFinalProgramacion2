@@ -62,15 +62,17 @@ exports.crearArtista = async (req, res) => {
         const album_famoso =
             Albumes.data.topalbums.album[0].name;
 
-        const oyentes =
-            Number(Artista.data.artist.stats.listeners);
+        const imagen_reicibda =
+            Artista.data.artist.image?.find(
+                img => img.size === "extralarge"
+            )?.["#text"] || null;
 
         const artistasAPI = {
             nombre_artista: nombre_artista_recibido,
             pais_origen: req.body.pais_origen,
             cancion_famosa: cancion_famosa,
             album_famoso: album_famoso,
-            oyentes_totales: oyentes
+            imagen: imagen_reicibda
         };
 
         await ArtistasAPI.create(artistasAPI);
@@ -165,6 +167,26 @@ exports.eliminarArtista = (req, res) => {
         .catch(err => {
             res.status(500).send({
                 message: err.message || "Error al eliminar el ususario con el id: " + id_artista_recibido
+            });
+        });
+};
+
+exports.buscarIdArtista = (req, res) => {
+    const id_artista_recibido= req.params.id;
+
+    ArtistasAPI.findByPk(id_artista_recibido)
+        .then(data => {
+            if(!data){
+                res.status(404).send({
+                    message: "No existe el id: " + id_artista_recibido
+                });
+                return;
+            }
+            res.send(data);
+        })
+        .catch(err => {
+            res.status(500).send({
+                message: err.message || "Error al encontrar el Usuario con el id: " + id_artista_recibido
             });
         });
 };

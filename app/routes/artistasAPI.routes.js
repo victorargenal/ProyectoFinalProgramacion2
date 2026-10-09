@@ -8,6 +8,8 @@ module.exports = app => {
 
     router.get("/nombre/:nombre_artista", artistasAPI.buscarNombre);
 
+    router.get("/:id", artistasAPI.buscarIdArtista);
+
     router.put("/update/:id", artistasAPI.actualizarArtista);
 
     router.delete("/delete/:id", artistasAPI.eliminarArtista);
