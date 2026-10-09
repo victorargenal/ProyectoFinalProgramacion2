@@ -35,9 +35,14 @@ exports.buscarFiltros = (req, res) => {
     const estado_recibido = req.query.estado_usuario;
     const rol_recibido = req.query.rol;
     
-    const condition = {
-        rol: rol_recibido,
-        estado_usuario: estado_recibido
+    const condition = {}
+
+    if(rol_recibido) {
+        condition.rol= rol_recibido
+    }
+
+    if(estado_recibido) {
+        condition.estado_usuario= estado_recibido
     }
     
     if (nombre_recibido) {
