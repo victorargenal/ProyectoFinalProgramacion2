@@ -45,7 +45,7 @@ module.exports = (sequelize, Sequelize) => {
         },
 
         estado_concierto: {
-            type: Sequelize.ENUM("Agendado","Activo","Finalizado","Cancelado"),
+            type: Sequelize.ENUM("Agendado","Finalizado","Cancelado"),
             allowNull: false,
             defaultValue: "Agendado"
         },
