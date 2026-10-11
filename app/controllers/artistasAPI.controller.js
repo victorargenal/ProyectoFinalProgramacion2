@@ -5,6 +5,7 @@ const Op= db.Sequelize.Op;
 const LASTFM_API_KEY = process.env.LASTFM_API_KEY;
 
 exports.crearArtista = async (req, res) => {
+
     if (!req.body.nombre_artista || !req.body.pais_origen) {
         res.status(400).send({
             message: "Algun campo esta vacio, favor rellenarlo."
@@ -13,8 +14,10 @@ exports.crearArtista = async (req, res) => {
     }
 
     try {
+
         const nombre_artista_recibido = req.body.nombre_artista;
 
+        // CANCION - LAST.FM
         const Canciones = await axios.get(
             "https://ws.audioscrobbler.com/2.0/",
             {
@@ -29,6 +32,7 @@ exports.crearArtista = async (req, res) => {
             }
         );
 
+        // ALBUM - LAST.FM
         const Albumes = await axios.get(
             "https://ws.audioscrobbler.com/2.0/",
             {
@@ -43,45 +47,47 @@ exports.crearArtista = async (req, res) => {
             }
         );
 
-        const Artista = await axios.get(
-            "https://ws.audioscrobbler.com/2.0/",
+        // IMAGEN - THEAUDIODB
+        const ImagenArtista = await axios.get(
+            "https://www.theaudiodb.com/api/v1/json/123/search.php",
             {
                 params: {
-                    method: "artist.getInfo",
-                    artist: nombre_artista_recibido,
-                    api_key: LASTFM_API_KEY,
-                    format: "json",
-                    autocorrect: 1
+                    s: nombre_artista_recibido
                 }
             }
         );
 
         const cancion_famosa =
-            Canciones.data.toptracks.track[0].name;
+                Canciones.data.toptracks.track[0].name;
 
         const album_famoso =
-            Albumes.data.topalbums.album[0].name;
+                Albumes.data.topalbums.album[0].name;
 
-        const imagen_reicibda =
-            Artista.data.artist.image?.find(
-                img => img.size === "extralarge"
-            )?.["#text"] || null;
+        const imagen_recibida =
+                ImagenArtista.data.artists?.[0]?.strArtistThumb || null;
+
 
         const artistasAPI = {
             nombre_artista: nombre_artista_recibido,
             pais_origen: req.body.pais_origen,
             cancion_famosa: cancion_famosa,
             album_famoso: album_famoso,
-            imagen: imagen_reicibda
+            imagen: imagen_recibida
         };
 
+
         await ArtistasAPI.create(artistasAPI);
+
         res.send({
             message: "Artista creado correctamente"
         });
-    }catch(err) {
+
+    } catch (err) {
+
+        console.log(err);
+
         res.status(500).send({
-            message:"Error al crear Artista, nombre de artista duplicado" 
+            message: err.message || "Error al crear Artista"
         });
     }
 };
@@ -138,6 +144,7 @@ exports.actualizarArtista = async (req, res) => {
         const nombre_artista_recibido = req.body.nombre_artista;
 
 
+        // CANCION - LAST.FM
         const Canciones = await axios.get(
             "https://ws.audioscrobbler.com/2.0/",
             {
@@ -153,6 +160,7 @@ exports.actualizarArtista = async (req, res) => {
         );
 
 
+        // ALBUM - LAST.FM
         const Albumes = await axios.get(
             "https://ws.audioscrobbler.com/2.0/",
             {
@@ -168,30 +176,25 @@ exports.actualizarArtista = async (req, res) => {
         );
 
 
-        const Artista = await axios.get(
-            "https://ws.audioscrobbler.com/2.0/",
+        // IMAGEN - THEAUDIODB
+        const ImagenArtista = await axios.get(
+            "https://www.theaudiodb.com/api/v1/json/123/search.php",
             {
                 params: {
-                    method: "artist.getInfo",
-                    artist: nombre_artista_recibido,
-                    api_key: LASTFM_API_KEY,
-                    format: "json",
-                    autocorrect: 1
+                    s: nombre_artista_recibido
                 }
             }
         );
 
 
         const cancion_famosa =
-            Canciones.data.toptracks.track[0].name;
+                Canciones.data.toptracks.track[0].name;
 
         const album_famoso =
-            Albumes.data.topalbums.album[0].name;
+                Albumes.data.topalbums.album[0].name;
 
         const imagen_recibida =
-            Artista.data.artist.image?.find(
-                img => img.size === "extralarge"
-            )?.["#text"] || null;
+                ImagenArtista.data.artists?.[0]?.strArtistThumb || null;
 
 
         const artistaActualizado = {
@@ -232,15 +235,13 @@ exports.actualizarArtista = async (req, res) => {
             });
         }
 
-
     } catch (err) {
 
         console.log(err);
 
         res.status(500).send({
-            message:
-                err.message ||
-                "Error al actualizar el artista"
+            message: err.message ||
+                    "Error al actualizar el artista"
         });
     }
 };
