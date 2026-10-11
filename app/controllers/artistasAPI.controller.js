@@ -123,28 +123,126 @@ exports.buscarNombre = (req, res) => {
         });
 };
 
-exports.actualizarArtista = (req, res) => {
-    const id_artista_recibido= req.params.id;
+exports.actualizarArtista = async (req, res) => {
 
-    ArtistasAPI.update(req.body, {
-        where: {id_artista: id_artista_recibido}
-    })
-        .then(num => {
-            if(num == 1){
-                res.send({
-                    message: "Artista actualizado"
-                });
-            } else {
-                res.stats(404).send({
-                    message:  `Error al actualizar el Artssta id= ${id_artista_recibido}. Registro inexistente o valor nulo`
-                });
-            }
-        })
-        .catch(err => {
-            res.status(500).send({
-                message: err.message || "Error al actualizar el Artista con el id: " + id_artista_recibido
-            });
+    const id_artista_recibido = req.params.id;
+
+    if (!req.body.nombre_artista || !req.body.pais_origen) {
+        return res.status(400).send({
+            message: "Algun campo esta vacio, favor rellenarlo."
         });
+    }
+
+    try {
+
+        const nombre_artista_recibido = req.body.nombre_artista;
+
+
+        const Canciones = await axios.get(
+            "https://ws.audioscrobbler.com/2.0/",
+            {
+                params: {
+                    method: "artist.getTopTracks",
+                    artist: nombre_artista_recibido,
+                    api_key: LASTFM_API_KEY,
+                    format: "json",
+                    limit: 1,
+                    autocorrect: 1
+                }
+            }
+        );
+
+
+        const Albumes = await axios.get(
+            "https://ws.audioscrobbler.com/2.0/",
+            {
+                params: {
+                    method: "artist.getTopAlbums",
+                    artist: nombre_artista_recibido,
+                    api_key: LASTFM_API_KEY,
+                    format: "json",
+                    limit: 1,
+                    autocorrect: 1
+                }
+            }
+        );
+
+
+        const Artista = await axios.get(
+            "https://ws.audioscrobbler.com/2.0/",
+            {
+                params: {
+                    method: "artist.getInfo",
+                    artist: nombre_artista_recibido,
+                    api_key: LASTFM_API_KEY,
+                    format: "json",
+                    autocorrect: 1
+                }
+            }
+        );
+
+
+        const cancion_famosa =
+            Canciones.data.toptracks.track[0].name;
+
+        const album_famoso =
+            Albumes.data.topalbums.album[0].name;
+
+        const imagen_recibida =
+            Artista.data.artist.image?.find(
+                img => img.size === "extralarge"
+            )?.["#text"] || null;
+
+
+        const artistaActualizado = {
+
+            nombre_artista: nombre_artista_recibido,
+
+            pais_origen: req.body.pais_origen,
+
+            cancion_famosa: cancion_famosa,
+
+            album_famoso: album_famoso,
+
+            imagen: imagen_recibida
+        };
+
+
+        const [num] = await ArtistasAPI.update(
+            artistaActualizado,
+            {
+                where: {
+                    id_artista: id_artista_recibido
+                }
+            }
+        );
+
+
+        if (num === 1) {
+
+            res.send({
+                message: "Artista actualizado correctamente"
+            });
+
+        } else {
+
+            res.status(404).send({
+                message:
+                    `No se encontro el artista con id ${id_artista_recibido}`
+            });
+        }
+
+
+    } catch (err) {
+
+        console.log(err);
+
+        res.status(500).send({
+            message:
+                err.message ||
+                "Error al actualizar el artista"
+        });
+    }
 };
 
 exports.eliminarArtista = (req, res) => {
