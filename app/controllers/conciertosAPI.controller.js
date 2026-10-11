@@ -49,8 +49,23 @@ exports.queryConciertos = (req, res) => {
 exports.buscarFiltrosConcierto = (req, res) => {
 const nombre_artista_concierto_recibido = req.query.nombre_artista_concierto;
 const estado_concierto_recibido = req.query.estado_concierto;
+const fecha_concierto_recibido = req.query.fecha_concierto;
+const horario_concierto_recibido = req.query.horario;
+const ubicacion_concierto_recibido = req.query.ubicacion;
     
     const condition = {}
+
+    if(fecha_concierto_recibido){
+        condition.fecha_concierto = fecha_concierto_recibido
+    }
+
+    if(horario_concierto_recibido){
+        condition.horario =  `%${horario_concierto_recibido}%`
+    }
+
+    if(ubicacion_concierto_recibido){
+        condition.ubicacion = ubicacion_concierto_recibido
+    }
 
     if(estado_concierto_recibido){
         condition.estado_concierto = estado_concierto_recibido
@@ -58,7 +73,7 @@ const estado_concierto_recibido = req.query.estado_concierto;
 
     if(nombre_artista_concierto_recibido){
         condition.nombre_artista_concierto = {
-            [Op.iLike]: `%${nombre_artista_concierto_recibido}%`
+            [Op.iLike]: nombre_artista_concierto_recibido
         }
     }
 
