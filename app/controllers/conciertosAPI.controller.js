@@ -59,8 +59,13 @@ const ubicacion_concierto_recibido = req.query.ubicacion;
         condition.fecha_concierto = fecha_concierto_recibido
     }
 
-    if(horario_concierto_recibido){
-        condition.horario =  `%${horario_concierto_recibido}%`
+    if (horario_concierto_recibido) {
+
+    const hora = horario_concierto_recibido.split(":")[0];
+
+        condition.horario = {
+            [Op.iLike]: `${hora}:%`
+        };
     }
 
     if(ubicacion_concierto_recibido){
@@ -73,7 +78,7 @@ const ubicacion_concierto_recibido = req.query.ubicacion;
 
     if(nombre_artista_concierto_recibido){
         condition.nombre_artista_concierto = {
-            [Op.iLike]: nombre_artista_concierto_recibido
+            [Op.iLike]: `%${nombre_artista_concierto_recibido}%`
         }
     }
 
