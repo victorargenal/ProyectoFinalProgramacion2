@@ -42,21 +42,59 @@ exports.queryReporte = (req, res) => {
 };
 
 exports.buscarNombreReporte = (req, res) => {
+
     const nombre_recibido = req.query.nombre_usuario_ventas;
-    
-    const condition = { 
-        nombre_usuario_ventas: nombre_recibido 
+    const fecha_recibida = req.query.fecha_venta;
+
+    const condition = {};
+
+    if (nombre_recibido) {
+        condition.nombre_usuario_ventas = nombre_recibido;
     }
-    
-    Ventas_reporteAPI.findAll({where: condition})
-        .then(data => {
-            res.send(data);
-        })
-        .catch(err => {
-            res.status(500).send({
-                message: err.message || "Error al encontrar los reportes "
-            });
+
+    if (fecha_recibida) { //ayuda de chat en este if unicamente
+
+        const partes = fecha_recibida.split("-");
+
+        const anio = parseInt(partes[0]);
+        const mes = parseInt(partes[1]);
+
+        let siguienteMes = mes + 1;
+        let siguienteAnio = anio;
+
+        if (siguienteMes === 13) {
+            siguienteMes = 1;
+            siguienteAnio++;
+        }
+
+        const mesActual = String(mes).padStart(2, "0");
+        const mesSiguiente = String(siguienteMes).padStart(2, "0");
+
+        const fechaInicio =
+            `${anio}-${mesActual}-01`;
+
+        const fechaFin =
+            `${siguienteAnio}-${mesSiguiente}-01`;
+
+        condition.fecha_venta = {
+            [Op.gte]: fechaInicio,
+            [Op.lt]: fechaFin
+        };
+    }
+
+    Ventas_reporteAPI.findAll({
+        where: condition
+    })
+    .then(data => {
+        res.send(data);
+    })
+    .catch(err => {
+        res.status(500).send({
+            message:
+                err.message ||
+                "Error al encontrar los reportes"
         });
+    });
 };
 
 exports.eliminarReporte = (req, res) => {
@@ -82,3 +120,4 @@ exports.eliminarReporte = (req, res) => {
             });
         });
 };
+
