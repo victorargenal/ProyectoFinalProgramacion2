@@ -39,7 +39,6 @@ exports.crearDetalle = async (req, res) => {
             id_inventario_detalle: req.body.id_inventario_detalle, //id del boleto
             cantidad_tickets_comprados: req.body.cantidad_tickets_comprados,
             subtotal: req.body.subtotal,
-            items_comprados: req.body.items_comprados, //variable creada desde javva para el for y hacer update por cada ticket
         }
 
         if(cantidad_de_tickets_disponibles_recibida<req.body.cantidad_tickets_comprados){

@@ -43,11 +43,6 @@ module.exports = (sequelize, Sequelize) => {
             allowNull: false
         },
         
-        //variable flotante para el ciclo for dentro del create detalleVentas, para que sepa cuantas veces hacer el update de cada ticket
-        items_comprados: { 
-            type: Sequelize.INTEGER,
-            allowNull: false
-        }
 
     },
         {
