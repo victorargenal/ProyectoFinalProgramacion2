@@ -14,7 +14,7 @@ module.exports = (sequelize, Sequelize) => {
         },
 
         nit_cliente: {
-            type: Sequelize.INTEGER,
+            type: Sequelize.STRING(50),
             allowNull: false
         },
 
