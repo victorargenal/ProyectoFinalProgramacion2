@@ -141,3 +141,55 @@ exports.eliminarUsario = (req, res) => {
             });
         });
 };
+
+exports.loginUsuario = (req, res) => {
+
+    const nombre_usuario_recibido = req.body.nombre_usuario;
+    const password_recibida = req.body.password_hash;
+
+    if (!nombre_usuario_recibido || !password_recibida) {
+        return res.status(400).send({
+            message: "Usuario o contraseña vacios"
+        });
+    }
+
+    UsuariosAPI.findOne({
+        where: {
+            nombre_usuario: nombre_usuario_recibido
+        }
+    })
+    .then(usuario => {
+
+        if (!usuario) {
+            return res.status(401).send({
+                message: "Usuario o contraseña incorrectos"
+            });
+        }
+
+        if (usuario.password_hash !== password_recibida) {
+            return res.status(401).send({
+                message: "Usuario o contraseña incorrectos"
+            });
+        }
+
+        if (usuario.estado_usuario !== "Activo") {
+            return res.status(403).send({
+                message: "Usuario inactivo"
+            });
+        }
+
+        res.send({
+            message: "Login correcto",
+        });
+
+    })
+    .catch(err => {
+
+        res.status(500).send({
+            message:
+                err.message ||
+                "Error al iniciar sesion"
+        });
+
+    });
+};

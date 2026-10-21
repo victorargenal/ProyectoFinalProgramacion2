@@ -4,6 +4,8 @@ module.exports = app => {
 
     router.post("/create/", usuariosAPI.crearUsuario);
 
+    router.post("/login", usuariosAPI.loginUsuario);
+
     router.get("/filtrosUsuario", usuariosAPI.buscarFiltros);
 
     router.get("/", usuariosAPI.queryUsarios);
