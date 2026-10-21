@@ -15,7 +15,6 @@ exports.crearBoletos = (req, res) => {
         nombre_boleto_inventario: req.body.nombre_boleto_inventario,
         seccion: req.body.seccion,
         precio: req.body.precio,
-        estado_ticket: req.body.estado_ticket,
         cantidad_total: req.body.cantidad_total,
         cantidad_tickets_disponible: req.body.cantidad_total
     }
