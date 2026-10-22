@@ -1,6 +1,7 @@
 const db = require("../models");
 const Ventas_reporteAPI = db.ventas_reporteAPI;
-const Op = db.Sequelize.Op
+const Op = db.Sequelize.Op;
+const Sequelize = db.Sequelize;
 
 exports.crearReporte = (req, res) => {
     if(!req.body.id_usuario_ventas || !req.body.nombre_usuario_ventas || !req.body.total_venta){
@@ -44,43 +45,60 @@ exports.queryReporte = (req, res) => {
 exports.buscarNombreReporte = (req, res) => {
 
     const nombre_recibido = req.query.nombre_usuario_ventas;
-    const fecha_recibida = req.query.fecha_venta;
+    const anio_recibido = req.query.anio;
+    const mes_recibido = req.query.mes;
+    const dia_recibido = req.query.dia;
 
     const condition = {};
+    const filtrosFecha = [];
 
     if (nombre_recibido) {
         condition.nombre_usuario_ventas = nombre_recibido;
     }
 
-    if (fecha_recibida) { //ayuda de chat en este if unicamente
-
-        const partes = fecha_recibida.split("-");
-
-        const anio = parseInt(partes[0]);
-        const mes = parseInt(partes[1]);
-
-        let siguienteMes = mes + 1;
-        let siguienteAnio = anio;
-
-        if (siguienteMes === 13) {
-            siguienteMes = 1;
-            siguienteAnio++;
-        }
-
-        const mesActual = String(mes).padStart(2, "0");
-        const mesSiguiente = String(siguienteMes).padStart(2, "0");
-
-        const fechaInicio =
-            `${anio}-${mesActual}-01`;
-
-        const fechaFin =
-            `${siguienteAnio}-${mesSiguiente}-01`;
-
-        condition.fecha_venta = {
-            [Op.gte]: fechaInicio,
-            [Op.lt]: fechaFin
-        };
+    if (anio_recibido) {
+        filtrosFecha.push(
+            Sequelize.where(
+                Sequelize.fn(
+                    "date_part",
+                    "year",
+                    Sequelize.col("fecha_venta")
+                ),
+                parseInt(anio_recibido)
+            )
+        );
     }
+
+    if (mes_recibido) {
+        filtrosFecha.push(
+            Sequelize.where(
+                Sequelize.fn(
+                    "date_part",
+                    "month",
+                    Sequelize.col("fecha_venta")
+                ),
+                parseInt(mes_recibido)
+            )
+        );
+    }
+
+    if (dia_recibido) {
+        filtrosFecha.push(
+            Sequelize.where(
+                Sequelize.fn(
+                    "date_part",
+                    "day",
+                    Sequelize.col("fecha_venta")
+                ),
+                parseInt(dia_recibido)
+            )
+        );
+    }
+
+    if (filtrosFecha.length > 0) {
+        condition[Op.and] = filtrosFecha;
+    }
+
 
     Ventas_reporteAPI.findAll({
         where: condition
@@ -95,6 +113,7 @@ exports.buscarNombreReporte = (req, res) => {
                 "Error al encontrar los reportes"
         });
     });
+
 };
 
 exports.eliminarReporte = (req, res) => {
