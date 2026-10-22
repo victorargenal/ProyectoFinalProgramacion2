@@ -18,13 +18,18 @@ module.exports = (sequelize, Sequelize) =>{
         },
 
         nombre_usuario_ventas:{
-            type: Sequelize.STRING,
+            type: Sequelize.STRING(100),
             allowNull: false
         },
 
         fecha_venta: {
             type: Sequelize.DATEONLY,
             defaultValue: Sequelize.NOW,
+            allowNull: false
+        },
+
+        metodo_pago: {
+            type: Sequelize.STRING(100),
             allowNull: false
         },
 
