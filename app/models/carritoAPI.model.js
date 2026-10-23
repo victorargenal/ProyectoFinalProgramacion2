@@ -32,7 +32,7 @@ module.exports = (sequelize, Sequelize) => {
             allowNull: false
         },
 
-        cantidad_tickets_comprada: {
+        cantidad_tickets_comprados: {
             type: Sequelize.INTEGER,
             allowNull: false
         }
