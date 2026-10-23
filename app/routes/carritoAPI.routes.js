@@ -8,5 +8,7 @@ module.exports = app => {
 
     router.delete("/delete/:id", carritoAPI.eliminarcarrito);
 
+    router.delete("/delete/", carritoAPI.eliminarcarritoCompleto);
+
     app.use("/api/carritoAPI", router);
 }
