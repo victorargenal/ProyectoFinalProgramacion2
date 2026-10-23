@@ -3,7 +3,7 @@ const CarritoAPI = db.carritoAPI;
 const Op = db.Sequelize.Op;
 
 exports.crearCarrito = (req, res) => {
-    if(!req.body.id_concierto_carrito || !req.body.nombre_boleto_carrito || !req.body.seccion || !req.body.precio || !req.body.cantidad_tickets_comprada){
+    if(!req.body.id_concierto_carrito || !req.body.nombre_boleto_carrito || !req.body.seccion || !req.body.precio || !req.body.cantidad_tickets_comprados){
         res.status(400).send({
             message: "Algun campo esta vacio, favor rellenarlo."
         });
@@ -15,7 +15,7 @@ exports.crearCarrito = (req, res) => {
         nombre_boleto_carrito: req.body.nombre_boleto_carrito,
         seccion: req.body.seccion,
         precio: req.body.precio,
-        cantidad_tickets_comprada: req.body.cantidad_tickets_comprada
+        cantidad_tickets_comprados: req.body.cantidad_tickets_comprados
     };
 
     CarritoAPI.create(carritoAPI)
