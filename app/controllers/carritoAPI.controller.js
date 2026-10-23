@@ -67,3 +67,19 @@ exports.eliminarcarrito = (req, res) => {
         });
 };
 
+exports.eliminarcarritoCompleto = (req, res) => {
+    CarritoAPI.destroy({
+        where: {},
+        truncate: false
+    })
+        .then(nums => {
+            res.send({ message: `${nums} registros eliminados` });
+        })
+        .catch(err => {
+            res.status(500).send({
+                message:
+                    err.message || "erro al eliminar todos los registros"
+            });
+        });
+};
+
