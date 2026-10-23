@@ -1,6 +1,6 @@
 module.exports = (sequelize, Sequelize) => {
 
-    const Inventario_boletosAPI = sequelize.define("inventario_boletosAPI", {
+    const CarritoAPI = sequelize.define("carritoAPI", {
 
         id_carrito: {
             type: Sequelize.INTEGER,
@@ -39,8 +39,8 @@ module.exports = (sequelize, Sequelize) => {
 
     },
         {
-            tableName: "inventario_boletosAPI"
+            tableName: "carritoAPI"
         }
     );
-    return Inventario_boletosAPI;
+    return CarritoAPI;
 }
