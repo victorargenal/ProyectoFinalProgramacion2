@@ -41,6 +41,8 @@ require("./app/routes/clientes_registradosAPI.routes")(app);
 
 require("./app/routes/ventas_reporteAPI.routes")(app);
 
+require("./app/routes/carritoAPI.routes")(app);
+
 
 const PORT = process.env.PORT || 8081;
 app.listen(PORT, () => {

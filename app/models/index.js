@@ -43,4 +43,6 @@ db.ventas_reporteAPI = require("./ventas_reporteAPI.model.js")(sequelize, Sequel
 
 db.clientes_registradosAPI = require("./clientes_registradosAPI.model.js")(sequelize, Sequelize);
 
+db.carritoAPI = require("./carritoAPI.model.js")(sequelize, Sequelize);
+
 module.exports = db;
