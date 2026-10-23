@@ -10,7 +10,7 @@ exports.crearCarrito = (req, res) => {
         return;
     }
 
-    const CarritoAPI = {
+    const carritoAPI = {
         id_concierto_carrito: req.body.id_concierto_carrito,
         nombre_boleto_carrito: req.body.nombre_boleto_carrito,
         seccion: req.body.seccion,
