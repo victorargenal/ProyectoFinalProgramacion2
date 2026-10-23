@@ -35,6 +35,11 @@ module.exports = (sequelize, Sequelize) => {
         cantidad_tickets_comprados: {
             type: Sequelize.INTEGER,
             allowNull: false
+        },
+
+        total_carrito: {
+            type: Sequelize.DECIMAL(10,2),
+            allowNull: false
         }
 
     },
