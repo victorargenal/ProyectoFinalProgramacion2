@@ -14,6 +14,7 @@ exports.crearReporte = (req, res) => {
     const ventas_reporteAPI = {
         id_usuario_ventas: req.body.id_usuario_ventas,
         nombre_usuario_ventas: req.body.nombre_usuario_ventas,
+        metodo_pago: req.body.metodo_pago,
         total_venta: req.body.total_venta
     }
 
