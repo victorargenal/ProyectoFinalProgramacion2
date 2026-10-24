@@ -123,3 +123,18 @@ exports.buscarFiltrosBoletos = (req, res) => {
             });
         });
 };
+
+exports.buscarboletosdisponibles = (req, res) => {
+    const condition = {seccion : "Disponible"}
+
+
+    Inventario_boletosAPI.findAll({where: condition})
+        .then(data => {
+            res.send(data);
+        })
+        .catch(err => {
+            res.status(500).send({
+                message: err.message || "Error al encontrar los boletos "
+            });
+        });
+};
