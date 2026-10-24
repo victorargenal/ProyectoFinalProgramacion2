@@ -6,6 +6,8 @@ module.exports = app => {
 
     router.get("/", inventario_boletosAPI.queryBoletos);
 
+    router.get("/", inventario_boletosAPI.buscarboletosdisponibles);
+
     router.get("/buscarFiltrosBoletos", inventario_boletosAPI.buscarFiltrosBoletos);
 
     router.put("/update/:id", inventario_boletosAPI.actualizarBoletos);
