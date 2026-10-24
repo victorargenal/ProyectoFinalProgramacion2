@@ -85,7 +85,7 @@ exports.crearDetalle = async (req, res) => {
 };
 
 exports.queryDetalle = (req, res) => {
-    Inventario_boletosAPI.findAll()
+    Detalle_ventasAPI.findAll()
     .then(data => {
         res.send(data);
     })
