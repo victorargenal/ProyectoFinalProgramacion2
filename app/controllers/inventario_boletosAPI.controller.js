@@ -125,7 +125,7 @@ exports.buscarFiltrosBoletos = (req, res) => {
 };
 
 exports.buscarboletosdisponibles = (req, res) => {
-    const condition = {seccion : "Disponible"}
+    const condition = {estado_ticket : "Disponible"}
 
 
     Inventario_boletosAPI.findAll({where: condition})
