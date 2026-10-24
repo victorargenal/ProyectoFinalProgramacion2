@@ -6,7 +6,7 @@ module.exports = app => {
 
     router.get("/", inventario_boletosAPI.queryBoletos);
 
-    router.get("/", inventario_boletosAPI.buscarboletosdisponibles);
+    router.get("/disponibles", inventario_boletosAPI.buscarboletosdisponibles);
 
     router.get("/buscarFiltrosBoletos", inventario_boletosAPI.buscarFiltrosBoletos);
 
