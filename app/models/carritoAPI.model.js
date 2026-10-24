@@ -8,7 +8,7 @@ module.exports = (sequelize, Sequelize) => {
             autoIncrement: true
         },
 
-        id_concierto_carrito: {
+        id_inventario_carrito: {
             type: Sequelize.INTEGER,
             allowNull: false,
             references: {
