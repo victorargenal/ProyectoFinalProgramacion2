@@ -180,6 +180,7 @@ exports.loginUsuario = (req, res) => {
 
         res.send({
             message: "Login correcto",
+            id_usuario: usuario.id_usuario,
         });
 
     })
