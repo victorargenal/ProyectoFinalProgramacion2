@@ -12,8 +12,8 @@ module.exports = (sequelize, Sequelize) => {
             type: Sequelize.INTEGER,
             allowNull: false,
             references: {
-                model: "conciertosAPI",
-                key: "id_concierto"
+                model: "inventario_boletosAPI",
+                key: "id_inventario"
             },
         },
 
