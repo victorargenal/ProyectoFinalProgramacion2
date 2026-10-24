@@ -46,7 +46,7 @@ exports.queryReporte = (req, res) => {
 exports.buscarNombreReporte = (req, res) => {
     
     const nombre_recibido = req.query.nombre_usuario_ventas;
-    const metodo_pago_recibido= req.quey.metodo_pago;
+    const metodo_pago_recibido= req.query.metodo_pago;
     const anio_recibido = req.query.anio;
     const mes_recibido = req.query.mes;
     const dia_recibido = req.query.dia;
