@@ -45,4 +45,6 @@ db.clientes_registradosAPI = require("./clientes_registradosAPI.model.js")(seque
 
 db.carritoAPI = require("./carritoAPI.model.js")(sequelize, Sequelize);
 
+db.liquidacionAPI = require("./liquidacionAPI.model.js")(sequelize, Sequelize);
+
 module.exports = db;
