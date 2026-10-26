@@ -13,27 +13,27 @@ module.exports = (sequelize, Sequelize) => {
             allowNull: false,
         },
 
-        gananciaTarjeta: {
+        ganancia_tarjeta: {
             type: Sequelize.DECIMAL(10,2),
             allowNull: false
         },
 
-        gananciaEfectivo: {
+        ganancia_efectivo: {
             type: Sequelize.DECIMAL(10,2),
             allowNull: false
         },
 
-        ganaciaTotal: {
+        ganacia_total: {
             type: Sequelize.DECIMAL(10,2),
             allowNull: false
         },
 
-        cierreCaja: {
+        cierre_caja: {
             type: Sequelize.DECIMAL(10,2),
             allowNull: false
         },
 
-        fechaLiquidacion: {
+        fecha_liquidacion: {
             type: Sequelize.DATEONLY,
             allowNull: false,
             defaultValue: Sequelize.NOW
