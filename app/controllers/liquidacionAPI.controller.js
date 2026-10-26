@@ -3,7 +3,7 @@ const LiquidacionAPI = db.liquidacionAPI;
 const Op = db.Sequelize.Op;
 
 exports.crearLiquidacion = (req, res) => {
-    if(!req.body.nombre_vendedor || !req.body.gananciaTarjeta || !req.body.gananciaEfectivo || !req.body.ganaciaTotal || !req.body.cierreCaja){
+    if(!req.body.nombre_vendedor || !req.body.ganancia_tarjeta || !req.body.ganancia_efectivo || !req.body.ganacia_total || !req.body.cierre_caja){
         res.status(400).send({
             message: "Algun campo esta vacio, favor rellenarlo."
         });
@@ -12,10 +12,10 @@ exports.crearLiquidacion = (req, res) => {
 
     const liquidacionAPI = {
         nombre_vendedor: req.body.nombre_vendedor,
-        gananciaTarjeta: req.body.gananciaTarjeta,
-        gananciaEfectivo: req.body.gananciaEfectivo,
-        ganaciaTotal: req.body.ganaciaTotal,
-        cierreCaja: req.body.cierreCaja
+        ganancia_tarjeta: req.body.ganancia_tarjeta,
+        ganancia_efectivo: req.body.ganancia_efectivo,
+        ganacia_total: req.body.ganacia_total,
+        cierre_caja: req.body.cierre_caja
     };
 
     LiquidacionAPI.create(liquidacionAPI)
