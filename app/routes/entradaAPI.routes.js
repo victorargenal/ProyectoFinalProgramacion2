@@ -1,16 +1,47 @@
 module.exports = app => {
 
-    const entrada =require("../controllers/entradaAPI.controller.js");
-    const router =require("express").Router();
+    const entrada =
+        require(
+            "../controllers/entradaAPI.controller.js"
+        );
 
-    router.get("/:token",entrada.verEntrada);
+    const router =
+        require("express").Router();
 
-    router.post("/:token/solicitar",entrada.solicitarEntrada);
 
-    router.get("/:token/aprobar",entrada.aprobarEntrada);
+    router.post(
+        "/crear",
+        entrada.crearEntrada
+    );
 
-    router.get("/:token/rechazar",entrada.rechazarEntrada);
 
-    app.use("/entrada",router);
+    router.get(
+        "/:token",
+        entrada.verEntrada
+    );
+
+
+    router.post(
+        "/:token/solicitar",
+        entrada.solicitarEntrada
+    );
+
+
+    router.get(
+        "/:token/aprobar",
+        entrada.aprobarEntrada
+    );
+
+
+    router.get(
+        "/:token/rechazar",
+        entrada.rechazarEntrada
+    );
+
+
+    app.use(
+        "/entrada",
+        router
+    );
 
 };

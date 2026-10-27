@@ -1,138 +1,136 @@
 const { Resend } = require("resend");
+const QRCode = require("qrcode");
 const crypto = require("crypto");
 
 const db = require("../models");
-
 const EntradaAPI = db.entradaAPI;
-const DetalleVentasAPI = db.detalle_ventasAPI;
-const InventarioBoletosAPI = db.inventario_boletosAPI;
 
-const resend = new Resend(
-    process.env.RESEND_API_KEY
-);
+const resend = new Resend(process.env.RESEND_API_KEY);
 
+const ADMIN_EMAIL = "vgallardoa@miumg.edu.gt";
 
+const BASE_URL =
+    process.env.BASE_URL ||
+    "https://proyectofinalprogramacion2.onrender.com";
 
-function escapar(texto) {
-
-    if (texto == null) {
-        return "";
-    }
-
-    return String(texto)
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
-}
-
+const ADMIN_SECRET =
+    process.env.ADMIN_SECRET ||
+    "proyecto-final-conciertos-2026";
 
 
 function generarFirma(token, accion) {
 
     return crypto
-        .createHmac(
-            "sha256",
-            process.env.ADMIN_SECRET
-        )
-        .update(
-            `${token}:${accion}`
-        )
+        .createHmac("sha256", ADMIN_SECRET)
+        .update(`${token}:${accion}`)
         .digest("hex");
 }
 
 
+function validarFirma(token, accion, firma) {
 
-function validarFirma(
-    token,
-    accion,
-    firmaRecibida
-) {
-
-    if (!firmaRecibida) {
+    if (!firma) {
         return false;
     }
 
     const firmaCorrecta =
-        generarFirma(
-            token,
-            accion
-        );
+        generarFirma(token, accion);
 
-
-    if (
-        firmaRecibida.length !==
-        firmaCorrecta.length
-    ) {
-
+    if (firma.length !== firmaCorrecta.length) {
         return false;
     }
 
-
     return crypto.timingSafeEqual(
-        Buffer.from(firmaRecibida),
+        Buffer.from(firma),
         Buffer.from(firmaCorrecta)
     );
 }
 
 
+exports.crearEntrada = async (req, res) => {
 
-async function obtenerTickets(idVenta) {
+    try {
 
-    const detalles =
-        await DetalleVentasAPI.findAll({
+        const idVenta =
+            Number(req.body.id_venta);
 
-            where: {
+        if (!idVenta) {
 
-                id_ventasReporte_detalle:
-                    idVenta
+            return res.status(400).send({
+                message: "ID de venta invalido"
+            });
 
-            }
-
-        });
-
-
-    const tickets = [];
+        }
 
 
-    for (const detalle of detalles) {
+        let entrada =
+            await EntradaAPI.findOne({
+                where: {
+                    id_venta_entrada: idVenta
+                }
+            });
 
-        const inventario =
-            await InventarioBoletosAPI.findByPk(
-                detalle.id_inventario_detalle
+
+        if (!entrada) {
+
+            const token =
+                crypto
+                    .randomBytes(32)
+                    .toString("hex");
+
+            entrada =
+                await EntradaAPI.create({
+                    id_venta_entrada: idVenta,
+                    token: token,
+                    estado: "ACTIVA"
+                });
+
+        }
+
+
+        const urlEntrada =
+            `${BASE_URL}/entrada/${entrada.token}`;
+
+
+        const qrDataUrl =
+            await QRCode.toDataURL(
+                urlEntrada,
+                {
+                    errorCorrectionLevel: "M",
+                    margin: 2,
+                    width: 400
+                }
             );
 
 
-        tickets.push({
+        const qrBase64 =
+            qrDataUrl.split(",")[1];
 
-            nombre:
-                inventario
-                    ? inventario.nombre_boleto_inventario
-                    : "Ticket",
 
-            seccion:
-                inventario
-                    ? inventario.seccion
-                    : "",
+        return res.send({
+            message: "Entrada creada correctamente",
+            url_entrada: urlEntrada,
+            qr_base64: qrBase64,
+            estado: entrada.estado
+        });
 
-            cantidad:
-                detalle.cantidad_tickets_comprados,
 
-            subtotal:
-                detalle.subtotal
+    } catch (error) {
 
+        console.error(error);
+
+        return res.status(500).send({
+            message:
+                error.message ||
+                "Error al crear entrada"
         });
 
     }
 
-
-    return tickets;
-}
+};
 
 
-exports.verEntrada =
-async (req, res) => {
+exports.verEntrada = async (req, res) => {
 
     try {
 
@@ -142,92 +140,36 @@ async (req, res) => {
 
         const entrada =
             await EntradaAPI.findOne({
-
                 where: {
                     token: token
                 }
-
             });
 
 
         if (!entrada) {
 
-            return res
-                .status(404)
-                .send(`
-
-                    <h1>
-                        Entrada no encontrada
-                    </h1>
-
-                `);
+            return res.status(404).send(`
+                <h1>Entrada no encontrada</h1>
+            `);
 
         }
 
 
-        const tickets =
-            await obtenerTickets(
-                entrada.id_venta_entrada
-            );
-
-
-        let filasTickets = "";
-
-
-        for (const ticket of tickets) {
-
-            filasTickets += `
-
-                <div class="ticket">
-
-                    <div>
-
-                        <strong>
-                            ${escapar(ticket.nombre)}
-                        </strong>
-
-                        <div class="secondary">
-                            ${escapar(ticket.seccion)}
-                        </div>
-
-                    </div>
-
-
-                    <div class="cantidad">
-
-                        x${ticket.cantidad}
-
-                    </div>
-
-                </div>
-
-            `;
-
-        }
-
-
-        let contenidoEstado = "";
-
+        let contenido = "";
 
 
         if (entrada.estado === "ACTIVA") {
 
-            contenidoEstado = `
+            contenido = `
 
-                <div class="status activa">
-
-                    Entrada disponible
-
+                <div class="estado activa">
+                    ENTRADA DISPONIBLE
                 </div>
 
-
-                <p class="mensaje">
-
-                    Cuando estés listo para ingresar,
-                    solicita tu entrada.
-
+                <p>
+                    Presiona el botón para solicitar
+                    tu ingreso al evento.
                 </p>
-
 
                 <form
                     method="POST"
@@ -235,9 +177,7 @@ async (req, res) => {
                 >
 
                     <button type="submit">
-
                         SOLICITAR ENTRADA
-
                     </button>
 
                 </form>
@@ -247,44 +187,25 @@ async (req, res) => {
         }
 
 
+        if (entrada.estado === "SOLICITADA") {
 
-        else if (
-            entrada.estado === "SOLICITADA"
-        ) {
+            contenido = `
 
-            contenidoEstado = `
-
-                <div class="status esperando">
-
-                    Solicitud enviada
-
+                <div class="estado esperando">
+                    SOLICITUD ENVIADA
                 </div>
-
 
                 <div class="loader"></div>
 
-
-                <p class="mensaje">
-
-                    Esperando autorización
-                    para ingresar...
-
+                <p>
+                    Esperando autorización...
                 </p>
-
-
-                <p class="small">
-
-                    Esta página se actualizará
-                    automáticamente.
-
-                </p>
-
 
                 <script>
 
                     setTimeout(
                         () => location.reload(),
-                        4000
+                        3000
                     );
 
                 </script>
@@ -294,36 +215,20 @@ async (req, res) => {
         }
 
 
+        if (entrada.estado === "APROBADA") {
 
-        else if (
-            entrada.estado === "APROBADA"
-        ) {
-
-            contenidoEstado = `
+            contenido = `
 
                 <div class="check">
                     ✓
                 </div>
 
-
-                <div class="status aprobada">
-
+                <div class="estado aprobada">
                     ENTRADA AUTORIZADA
-
                 </div>
 
-
-                <p class="mensaje">
-
-                    Tu solicitud fue aprobada.
-
-                </p>
-
-
-                <p class="entradaPermitida">
-
+                <p>
                     Puedes ingresar al concierto.
-
                 </p>
 
             `;
@@ -331,25 +236,17 @@ async (req, res) => {
         }
 
 
+        if (entrada.estado === "RECHAZADA") {
 
-        else if (
-            entrada.estado === "RECHAZADA"
-        ) {
+            contenido = `
 
-            contenidoEstado = `
-
-                <div class="status rechazada">
-
-                    Entrada no autorizada
-
+                <div class="estado rechazada">
+                    ENTRADA RECHAZADA
                 </div>
 
-
-                <p class="mensaje">
-
+                <p>
                     Tu solicitud de ingreso
                     fue rechazada.
-
                 </p>
 
             `;
@@ -357,24 +254,20 @@ async (req, res) => {
         }
 
 
+        if (entrada.estado === "USADA") {
 
-        else if (
-            entrada.estado === "USADA"
-        ) {
+            contenido = `
 
-            contenidoEstado = `
-
-                <div class="status rechazada">
-
+                <div class="estado rechazada">
                     ENTRADA YA UTILIZADA
-
                 </div>
 
             `;
 
         }
 
-        res.send(`
+
+        return res.send(`
 
 <!DOCTYPE html>
 
@@ -382,487 +275,323 @@ async (req, res) => {
 
 <head>
 
-    <meta charset="UTF-8">
+<meta charset="UTF-8">
 
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
+<meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+>
 
-    <title>
-        Entrada al concierto
-    </title>
+<title>
+    Entrada
+</title>
 
+<style>
 
-    <style>
+* {
+    box-sizing: border-box;
+}
 
-        * {
-            box-sizing: border-box;
-        }
+body {
 
+    margin: 0;
 
-        body {
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
 
-            margin: 0;
+    background:
+        #F3F6FA;
 
-            font-family:
-                Arial,
-                Helvetica,
-                sans-serif;
+    color:
+        #25364A;
 
-            background:
-                #f3f6fa;
+}
 
-            color:
-                #25364A;
+.contenedor {
 
-        }
+    min-height:
+        100vh;
 
+    display:
+        flex;
 
-        .page {
+    justify-content:
+        center;
 
-            min-height: 100vh;
+    align-items:
+        center;
 
-            display: flex;
+    padding:
+        20px;
 
-            justify-content: center;
+}
 
-            align-items: center;
+.tarjeta {
 
-            padding: 25px 15px;
+    width:
+        100%;
 
-        }
+    max-width:
+        480px;
 
+    background:
+        white;
 
-        .card {
+    border-radius:
+        20px;
 
-            width: 100%;
+    overflow:
+        hidden;
 
-            max-width: 520px;
+    box-shadow:
+        0 15px 40px
+        rgba(18,54,91,0.15);
 
-            background:
-                white;
+}
 
-            border-radius:
-                20px;
+.header {
 
-            overflow:
-                hidden;
+    background:
+        #12365B;
 
-            box-shadow:
-                0 15px 45px
-                rgba(
-                    18,
-                    54,
-                    91,
-                    0.14
-                );
+    color:
+        white;
 
-        }
+    text-align:
+        center;
 
+    padding:
+        32px;
 
-        .header {
+}
 
-            background:
-                #12365B;
+.header h1 {
 
-            color:
-                white;
+    margin:
+        0;
 
-            padding:
-                32px;
+    font-size:
+        26px;
 
-            text-align:
-                center;
+}
 
-        }
+.header p {
 
+    color:
+        #C7DAE9;
 
-        .header h1 {
+    margin-bottom:
+        0;
 
-            margin:
-                0;
+}
 
-            font-size:
-                27px;
+.contenido {
 
-        }
+    padding:
+        32px;
 
+    text-align:
+        center;
 
-        .header p {
+}
 
-            margin:
-                8px 0 0;
+.venta {
 
-            color:
-                #CFE4F4;
+    color:
+        #738497;
 
-        }
+    font-size:
+        13px;
 
+    margin-bottom:
+        25px;
 
-        .content {
+}
 
-            padding:
-                30px;
+.estado {
 
-        }
+    padding:
+        14px;
 
+    border-radius:
+        10px;
 
-        .venta {
+    font-weight:
+        bold;
 
-            color:
-                #718295;
+    margin-bottom:
+        22px;
 
-            font-size:
-                13px;
+}
 
-            margin-bottom:
-                25px;
+.activa {
 
-            text-align:
-                center;
+    background:
+        #EAF4FA;
 
-        }
+    color:
+        #20618F;
 
+}
 
-        .ticketsTitle {
+.esperando {
 
-            color:
-                #12365B;
+    background:
+        #FFF4D6;
 
-            font-size:
-                14px;
+    color:
+        #8A6700;
 
-            font-weight:
-                bold;
+}
 
-            margin-bottom:
-                10px;
+.aprobada {
 
-        }
+    background:
+        #E4F7EA;
 
+    color:
+        #19733A;
 
-        .ticket {
+    font-size:
+        18px;
 
-            display:
-                flex;
+}
 
-            justify-content:
-                space-between;
+.rechazada {
 
-            align-items:
-                center;
+    background:
+        #FCE8E8;
 
-            padding:
-                14px;
+    color:
+        #A32626;
 
-            background:
-                #F4F8FC;
+}
 
-            border-radius:
-                10px;
+button {
 
-            margin-bottom:
-                8px;
+    width:
+        100%;
 
-        }
+    border:
+        none;
 
+    border-radius:
+        10px;
 
-        .secondary {
+    background:
+        #12365B;
 
-            color:
-                #788A9D;
+    color:
+        white;
 
-            font-size:
-                13px;
+    padding:
+        16px;
 
-            margin-top:
-                4px;
+    font-size:
+        15px;
 
-        }
+    font-weight:
+        bold;
 
+    cursor:
+        pointer;
 
-        .cantidad {
+}
 
-            font-weight:
-                bold;
+button:hover {
 
-            color:
-                #20618F;
+    background:
+        #174A78;
 
-            font-size:
-                17px;
+}
 
-        }
+.check {
 
+    width:
+        80px;
 
-        .status {
+    height:
+        80px;
 
-            margin-top:
-                30px;
+    border-radius:
+        50%;
 
-            padding:
-                13px;
+    background:
+        #24A05A;
 
-            border-radius:
-                10px;
+    color:
+        white;
 
-            text-align:
-                center;
+    margin:
+        0 auto 20px;
 
-            font-weight:
-                bold;
+    display:
+        flex;
 
-        }
+    align-items:
+        center;
 
+    justify-content:
+        center;
 
-        .activa {
+    font-size:
+        42px;
 
-            background:
-                #EDF6FB;
+    font-weight:
+        bold;
 
-            color:
-                #20618F;
+}
 
-        }
+.loader {
 
+    width:
+        40px;
 
-        .esperando {
+    height:
+        40px;
 
-            background:
-                #FFF5D9;
+    margin:
+        25px auto;
 
-            color:
-                #8B6800;
+    border:
+        4px solid #E5EDF5;
 
-        }
+    border-top:
+        4px solid #20618F;
 
+    border-radius:
+        50%;
 
-        .aprobada {
+    animation:
+        girar 1s linear infinite;
 
-            background:
-                #E7F8ED;
+}
 
-            color:
-                #19733A;
+@keyframes girar {
 
-            font-size:
-                19px;
+    from {
+        transform:
+            rotate(0deg);
+    }
 
-        }
+    to {
+        transform:
+            rotate(360deg);
+    }
 
+}
 
-        .rechazada {
-
-            background:
-                #FDECEC;
-
-            color:
-                #A32626;
-
-        }
-
-
-        .mensaje {
-
-            text-align:
-                center;
-
-            color:
-                #5F7184;
-
-            line-height:
-                1.5;
-
-            margin:
-                22px 0;
-
-        }
-
-
-        button {
-
-            width:
-                100%;
-
-            border:
-                none;
-
-            border-radius:
-                10px;
-
-            padding:
-                16px;
-
-            background:
-                #12365B;
-
-            color:
-                white;
-
-            font-weight:
-                bold;
-
-            font-size:
-                15px;
-
-            cursor:
-                pointer;
-
-        }
-
-
-        button:hover {
-
-            background:
-                #174A78;
-
-        }
-
-
-        .check {
-
-            width:
-                75px;
-
-            height:
-                75px;
-
-            margin:
-                30px auto 15px;
-
-            border-radius:
-                50%;
-
-            background:
-                #24A05A;
-
-            color:
-                white;
-
-            display:
-                flex;
-
-            align-items:
-                center;
-
-            justify-content:
-                center;
-
-            font-size:
-                40px;
-
-            font-weight:
-                bold;
-
-        }
-
-
-        .entradaPermitida {
-
-            text-align:
-                center;
-
-            font-weight:
-                bold;
-
-            color:
-                #19733A;
-
-            font-size:
-                18px;
-
-        }
-
-
-        .small {
-
-            text-align:
-                center;
-
-            font-size:
-                12px;
-
-            color:
-                #98A5B3;
-
-        }
-
-
-        .loader {
-
-            width:
-                38px;
-
-            height:
-                38px;
-
-            margin:
-                25px auto;
-
-            border:
-                4px solid #E5EDF5;
-
-            border-top:
-                4px solid #20618F;
-
-            border-radius:
-                50%;
-
-            animation:
-                spin 1s linear infinite;
-
-        }
-
-
-        @keyframes spin {
-
-            from {
-                transform:
-                    rotate(0deg);
-            }
-
-            to {
-                transform:
-                    rotate(360deg);
-            }
-
-        }
-
-
-        .footer {
-
-            background:
-                #F7F9FB;
-
-            color:
-                #96A2AF;
-
-            font-size:
-                11px;
-
-            padding:
-                17px;
-
-            text-align:
-                center;
-
-        }
-
-
-    </style>
+</style>
 
 </head>
 
-
 <body>
 
+<div class="contenedor">
 
-<div class="page">
-
-
-    <div class="card">
-
+    <div class="tarjeta">
 
         <div class="header">
 
@@ -876,46 +605,19 @@ async (req, res) => {
 
         </div>
 
-
-        <div class="content">
-
+        <div class="contenido">
 
             <div class="venta">
-
-                Compra #${entrada.id_venta_entrada}
-
+                Venta #${entrada.id_venta_entrada}
             </div>
 
-
-            <div class="ticketsTitle">
-
-                TUS TICKETS
-
-            </div>
-
-
-            ${filasTickets}
-
-
-            ${contenidoEstado}
-
+            ${contenido}
 
         </div>
-
-
-        <div class="footer">
-
-            Código de entrada único
-            para esta compra
-
-        </div>
-
 
     </div>
 
-
 </div>
-
 
 </body>
 
@@ -928,20 +630,16 @@ async (req, res) => {
 
         console.error(error);
 
-        res
-            .status(500)
-            .send(
-                "Error al cargar la entrada"
-            );
+        return res.status(500).send(
+            "Error al cargar entrada"
+        );
 
     }
 
 };
 
 
-
-exports.solicitarEntrada =
-async (req, res) => {
+exports.solicitarEntrada = async (req, res) => {
 
     try {
 
@@ -951,28 +649,22 @@ async (req, res) => {
 
         const entrada =
             await EntradaAPI.findOne({
-
                 where: {
                     token: token
                 }
-
             });
 
 
         if (!entrada) {
 
-            return res
-                .status(404)
-                .send(
-                    "Entrada no encontrada"
-                );
+            return res.status(404).send(
+                "Entrada no encontrada"
+            );
 
         }
 
 
-        if (
-            entrada.estado !== "ACTIVA"
-        ) {
+        if (entrada.estado !== "ACTIVA") {
 
             return res.redirect(
                 `/entrada/${token}`
@@ -985,11 +677,6 @@ async (req, res) => {
             "SOLICITADA";
 
         await entrada.save();
-
-
-
-        const baseUrl =
-            process.env.BASE_URL;
 
 
         const firmaAprobar =
@@ -1007,46 +694,11 @@ async (req, res) => {
 
 
         const urlAprobar =
-
-            `${baseUrl}/entrada/${token}/aprobar?firma=${firmaAprobar}`;
+            `${BASE_URL}/entrada/${token}/aprobar?firma=${firmaAprobar}`;
 
 
         const urlRechazar =
-
-            `${baseUrl}/entrada/${token}/rechazar?firma=${firmaRechazar}`;
-
-
-        const tickets =
-            await obtenerTickets(
-                entrada.id_venta_entrada
-            );
-
-
-        let listaTickets = "";
-
-
-        for (const ticket of tickets) {
-
-            listaTickets += `
-
-                <li style="
-                    margin-bottom:8px;
-                ">
-
-                    ${escapar(ticket.nombre)}
-
-                    -
-
-                    ${escapar(ticket.seccion)}
-
-                    x${ticket.cantidad}
-
-                </li>
-
-            `;
-
-        }
-
+            `${BASE_URL}/entrada/${token}/rechazar?firma=${firmaRechazar}`;
 
 
         const resultado =
@@ -1056,7 +708,7 @@ async (req, res) => {
                     "Sistema de Conciertos <onboarding@resend.dev>",
 
                 to: [
-                    process.env.ADMIN_EMAIL
+                    ADMIN_EMAIL
                 ],
 
                 subject:
@@ -1064,132 +716,107 @@ async (req, res) => {
 
                 html: `
 
-                    <div style="
-                        font-family:
-                            Arial,
-                            Helvetica,
-                            sans-serif;
+                    <div
+                        style="
+                            font-family:Arial;
+                            background:#F3F6FA;
+                            padding:35px;
+                        "
+                    >
 
-                        background:
-                            #f4f7fb;
+                        <div
+                            style="
+                                max-width:600px;
+                                margin:auto;
+                                background:white;
+                                border-radius:15px;
+                                overflow:hidden;
+                            "
+                        >
 
-                        padding:
-                            30px;
-                    ">
+                            <div
+                                style="
+                                    background:#12365B;
+                                    color:white;
+                                    padding:28px;
+                                "
+                            >
 
-
-                        <div style="
-                            max-width:
-                                600px;
-
-                            margin:
-                                auto;
-
-                            background:
-                                white;
-
-                            padding:
-                                30px;
-
-                            border-radius:
-                                15px;
-                        ">
-
-
-                            <h2 style="
-                                color:#12365B;
-                            ">
-
-                                Solicitud de entrada
-
-                            </h2>
-
-
-                            <p>
-
-                                La compra
-
-                                <strong>
-
-                                    #${entrada.id_venta_entrada}
-
-                                </strong>
-
-                                está solicitando ingreso
-                                al concierto.
-
-                            </p>
-
-
-                            <h3>
-                                Tickets
-                            </h3>
-
-
-                            <ul>
-
-                                ${listaTickets}
-
-                            </ul>
-
-
-                            <div style="
-                                margin-top:
-                                    30px;
-                            ">
-
-
-                                <a
-                                    href="${urlAprobar}"
-
+                                <h2
                                     style="
-                                        display:inline-block;
-                                        background:#198754;
-                                        color:white;
-                                        text-decoration:none;
-                                        padding:14px 22px;
-                                        border-radius:8px;
-                                        font-weight:bold;
-                                        margin-right:10px;
+                                        margin:0;
                                     "
                                 >
-
-                                    APROBAR ENTRADA
-
-                                </a>
-
-
-                                <a
-                                    href="${urlRechazar}"
-
-                                    style="
-                                        display:inline-block;
-                                        background:#B02A37;
-                                        color:white;
-                                        text-decoration:none;
-                                        padding:14px 22px;
-                                        border-radius:8px;
-                                        font-weight:bold;
-                                    "
-                                >
-
-                                    RECHAZAR
-
-                                </a>
-
+                                    Solicitud de entrada
+                                </h2>
 
                             </div>
 
+                            <div
+                                style="
+                                    padding:30px;
+                                    color:#25364A;
+                                "
+                            >
+
+                                <p>
+                                    La venta
+                                    <strong>
+                                        #${entrada.id_venta_entrada}
+                                    </strong>
+                                    está solicitando ingreso.
+                                </p>
+
+                                <div
+                                    style="
+                                        margin-top:30px;
+                                    "
+                                >
+
+                                    <a
+                                        href="${urlAprobar}"
+
+                                        style="
+                                            display:inline-block;
+                                            background:#198754;
+                                            color:white;
+                                            text-decoration:none;
+                                            padding:14px 20px;
+                                            border-radius:8px;
+                                            font-weight:bold;
+                                            margin-right:10px;
+                                        "
+                                    >
+                                        APROBAR
+                                    </a>
+
+                                    <a
+                                        href="${urlRechazar}"
+
+                                        style="
+                                            display:inline-block;
+                                            background:#B02A37;
+                                            color:white;
+                                            text-decoration:none;
+                                            padding:14px 20px;
+                                            border-radius:8px;
+                                            font-weight:bold;
+                                        "
+                                    >
+                                        RECHAZAR
+                                    </a>
+
+                                </div>
+
+                            </div>
 
                         </div>
-
 
                     </div>
 
                 `
 
             });
-
 
 
         if (resultado.error) {
@@ -1199,22 +826,18 @@ async (req, res) => {
 
             await entrada.save();
 
-
             console.error(
                 resultado.error
             );
 
-
-            return res
-                .status(500)
-                .send(
-                    "No se pudo enviar la solicitud"
-                );
+            return res.status(500).send(
+                "No se pudo enviar la solicitud"
+            );
 
         }
 
 
-        res.redirect(
+        return res.redirect(
             `/entrada/${token}`
         );
 
@@ -1223,20 +846,16 @@ async (req, res) => {
 
         console.error(error);
 
-        res
-            .status(500)
-            .send(
-                "Error al solicitar entrada"
-            );
+        return res.status(500).send(
+            "Error al solicitar entrada"
+        );
 
     }
 
 };
 
 
-
-exports.aprobarEntrada =
-async (req, res) => {
+exports.aprobarEntrada = async (req, res) => {
 
     try {
 
@@ -1255,32 +874,26 @@ async (req, res) => {
             )
         ) {
 
-            return res
-                .status(403)
-                .send(
-                    "Autorización inválida"
-                );
+            return res.status(403).send(
+                "Autorizacion invalida"
+            );
 
         }
 
 
         const entrada =
             await EntradaAPI.findOne({
-
                 where: {
                     token: token
                 }
-
             });
 
 
         if (!entrada) {
 
-            return res
-                .status(404)
-                .send(
-                    "Entrada no encontrada"
-                );
+            return res.status(404).send(
+                "Entrada no encontrada"
+            );
 
         }
 
@@ -1291,36 +904,30 @@ async (req, res) => {
         await entrada.save();
 
 
-        res.send(`
+        return res.send(`
 
-            <div style="
-                font-family:Arial;
-                text-align:center;
-                padding:60px;
-            ">
+            <div
+                style="
+                    font-family:Arial;
+                    text-align:center;
+                    padding:60px;
+                "
+            >
 
-                <h1 style="
-                    color:#198754;
-                ">
-
+                <h1
+                    style="
+                        color:#198754;
+                    "
+                >
                     ✓ Entrada aprobada
-
                 </h1>
 
+                <h2>
+                    Venta #${entrada.id_venta_entrada}
+                </h2>
 
                 <p>
-
-                    Venta
-                    #${entrada.id_venta_entrada}
-
-                </p>
-
-
-                <p>
-
-                    El cliente ya puede
-                    ingresar al concierto.
-
+                    El cliente ya puede ingresar.
                 </p>
 
             </div>
@@ -1332,20 +939,16 @@ async (req, res) => {
 
         console.error(error);
 
-        res
-            .status(500)
-            .send(
-                "Error al aprobar entrada"
-            );
+        return res.status(500).send(
+            "Error al aprobar entrada"
+        );
 
     }
 
 };
 
 
-
-exports.rechazarEntrada =
-async (req, res) => {
+exports.rechazarEntrada = async (req, res) => {
 
     try {
 
@@ -1364,32 +967,26 @@ async (req, res) => {
             )
         ) {
 
-            return res
-                .status(403)
-                .send(
-                    "Autorización inválida"
-                );
+            return res.status(403).send(
+                "Autorizacion invalida"
+            );
 
         }
 
 
         const entrada =
             await EntradaAPI.findOne({
-
                 where: {
                     token: token
                 }
-
             });
 
 
         if (!entrada) {
 
-            return res
-                .status(404)
-                .send(
-                    "Entrada no encontrada"
-                );
+            return res.status(404).send(
+                "Entrada no encontrada"
+            );
 
         }
 
@@ -1400,29 +997,27 @@ async (req, res) => {
         await entrada.save();
 
 
-        res.send(`
+        return res.send(`
 
-            <div style="
-                font-family:Arial;
-                text-align:center;
-                padding:60px;
-            ">
+            <div
+                style="
+                    font-family:Arial;
+                    text-align:center;
+                    padding:60px;
+                "
+            >
 
-                <h1 style="
-                    color:#B02A37;
-                ">
-
+                <h1
+                    style="
+                        color:#B02A37;
+                    "
+                >
                     Entrada rechazada
-
                 </h1>
 
-
-                <p>
-
-                    Venta
-                    #${entrada.id_venta_entrada}
-
-                </p>
+                <h2>
+                    Venta #${entrada.id_venta_entrada}
+                </h2>
 
             </div>
 
@@ -1433,11 +1028,9 @@ async (req, res) => {
 
         console.error(error);
 
-        res
-            .status(500)
-            .send(
-                "Error al rechazar entrada"
-            );
+        return res.status(500).send(
+            "Error al rechazar entrada"
+        );
 
     }
 
