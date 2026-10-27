@@ -47,6 +47,6 @@ db.carritoAPI = require("./carritoAPI.model.js")(sequelize, Sequelize);
 
 db.liquidacionAPI = require("./liquidacionAPI.model.js")(sequelize, Sequelize);
 
-db.entradaAPI = require("./entradaAPI.model.js")(sequelize, Sequelize);s
+db.entradaAPI = require("./entradaAPI.model.js")(sequelize, Sequelize);
 
 module.exports = db;
