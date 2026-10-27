@@ -11,7 +11,6 @@ const resend = new Resend(
 );
 
 
-
 function escapar(texto) {
 
     if (texto == null) {
@@ -27,36 +26,33 @@ function escapar(texto) {
 }
 
 
-
 exports.enviarCorreoCompra = async (req, res) => {
 
     try {
 
-
         const correo =
-                req.body.correo;
+            req.body.correo;
 
         const nombreCliente =
-                req.body.nombre_cliente;
+            req.body.nombre_cliente;
 
         const idVenta =
-                req.body.id_venta;
+            req.body.id_venta;
 
         const numeroFactura =
-                req.body.numero_factura;
+            req.body.numero_factura;
 
         const fechaVenta =
-                req.body.fecha_venta;
+            req.body.fecha_venta;
 
         const metodoPago =
-                req.body.metodo_pago;
+            req.body.metodo_pago;
 
         const total =
-                req.body.total;
+            req.body.total;
 
         const tickets =
-                req.body.tickets;
-
+            req.body.tickets;
 
 
         if (
@@ -64,8 +60,7 @@ exports.enviarCorreoCompra = async (req, res) => {
             !nombreCliente ||
             !idVenta ||
             !numeroFactura ||
-            total == null ||
-            !Array.isArray(tickets)
+            !tickets
         ) {
 
             return res.status(400).send({
@@ -74,82 +69,76 @@ exports.enviarCorreoCompra = async (req, res) => {
                     "Faltan datos para enviar el correo"
 
             });
+
         }
 
 
         let entrada =
-                await EntradaAPI.findOne({
+            await EntradaAPI.findOne({
 
-                    where: {
+                where: {
 
-                        id_venta_entrada:
-                            idVenta
+                    id_venta_entrada:
+                        idVenta
 
-                    }
+                }
 
-                });
-
+            });
 
 
         if (!entrada) {
 
             const token =
-                    crypto
-                        .randomBytes(32)
-                        .toString("hex");
+                crypto
+                    .randomBytes(32)
+                    .toString("hex");
 
 
             entrada =
-                    await EntradaAPI.create({
+                await EntradaAPI.create({
 
-                        id_venta_entrada:
-                            idVenta,
+                    id_venta_entrada:
+                        idVenta,
 
-                        token:
-                            token,
+                    token:
+                        token,
 
-                        estado:
-                            "ACTIVA"
+                    estado:
+                        "ACTIVA"
 
-                    });
+                });
+
         }
 
 
-
         const baseUrl =
-                process.env.BASE_URL ||
-                "https://proyectofinalprogramacion2.onrender.com";
+            process.env.BASE_URL
+            ||
+            "https://proyectofinalprogramacion2.onrender.com";
 
 
         const urlEntrada =
-                `${baseUrl}/entrada/${entrada.token}`;
+            `${baseUrl}/entrada/${entrada.token}`;
 
 
         const qrDataUrl =
-                await QRCode.toDataURL(
+            await QRCode.toDataURL(
+                urlEntrada,
+                {
+                    errorCorrectionLevel:
+                        "M",
 
-                    urlEntrada,
+                    margin:
+                        2,
 
-                    {
-
-                        errorCorrectionLevel:
-                            "M",
-
-                        margin:
-                            2,
-
-                        width:
-                            300
-
-                    }
-
-                );
+                    width:
+                        350
+                }
+            );
 
 
         const qrBase64 =
-                qrDataUrl.split(",")[1];
-
-
+            qrDataUrl.split(",")[1];
 
 
         let filasTickets = "";
@@ -157,480 +146,805 @@ exports.enviarCorreoCompra = async (req, res) => {
 
         for (const ticket of tickets) {
 
+            const nombreBoleto =
+                escapar(
+                    ticket.nombre_boleto_carrito
+                );
+
+            const seccion =
+                escapar(
+                    ticket.seccion
+                );
+
+            const precio =
+                Number(
+                    ticket.precio || 0
+                );
+
+            const cantidad =
+                Number(
+                    ticket.cantidad_tickets_comprados || 0
+                );
+
+            const subtotal =
+                Number(
+                    ticket.total_carrito || 0
+                );
+
+
             filasTickets += `
 
                 <tr>
 
-                    <td style="
-                        padding:12px;
-                        border-bottom:1px solid #e5e7eb;
-                    ">
+                    <td
+                        style="
+                            padding:14px 10px;
+                            border-bottom:1px solid #E4EBF2;
+                            color:#26384A;
+                            font-size:14px;
+                        "
+                    >
 
-                        ${escapar(
-                            ticket.nombre_boleto_carrito
-                        )}
-
-                    </td>
-
-
-                    <td style="
-                        padding:12px;
-                        border-bottom:1px solid #e5e7eb;
-                    ">
-
-                        ${escapar(
-                            ticket.seccion
-                        )}
+                        <strong>
+                            ${nombreBoleto}
+                        </strong>
 
                     </td>
 
 
-                    <td style="
-                        padding:12px;
-                        border-bottom:1px solid #e5e7eb;
-                        text-align:center;
-                    ">
+                    <td
+                        style="
+                            padding:14px 10px;
+                            border-bottom:1px solid #E4EBF2;
+                            color:#65788A;
+                            font-size:14px;
+                            text-align:center;
+                        "
+                    >
 
-                        ${
-                            ticket
-                                .cantidad_tickets_comprados
-                        }
-
-                    </td>
-
-
-                    <td style="
-                        padding:12px;
-                        border-bottom:1px solid #e5e7eb;
-                        text-align:right;
-                    ">
-
-                        Q ${
-                            Number(
-                                ticket.precio
-                            ).toFixed(2)
-                        }
+                        ${seccion}
 
                     </td>
 
 
-                    <td style="
-                        padding:12px;
-                        border-bottom:1px solid #e5e7eb;
-                        text-align:right;
-                        font-weight:bold;
-                    ">
+                    <td
+                        style="
+                            padding:14px 10px;
+                            border-bottom:1px solid #E4EBF2;
+                            color:#65788A;
+                            font-size:14px;
+                            text-align:center;
+                        "
+                    >
 
-                        Q ${
-                            Number(
-                                ticket.total_carrito
-                            ).toFixed(2)
-                        }
+                        ${cantidad}
+
+                    </td>
+
+
+                    <td
+                        style="
+                            padding:14px 10px;
+                            border-bottom:1px solid #E4EBF2;
+                            color:#65788A;
+                            font-size:14px;
+                            text-align:right;
+                        "
+                    >
+
+                        Q${precio.toFixed(2)}
+
+                    </td>
+
+
+                    <td
+                        style="
+                            padding:14px 10px;
+                            border-bottom:1px solid #E4EBF2;
+                            color:#12365B;
+                            font-size:14px;
+                            font-weight:bold;
+                            text-align:right;
+                        "
+                    >
+
+                        Q${subtotal.toFixed(2)}
 
                     </td>
 
                 </tr>
 
             `;
-        }
 
+        }
 
 
         const htmlCorreo = `
 
-        <div style="
-            background:#f4f7fb;
-            padding:30px 15px;
-            font-family:Arial,Helvetica,sans-serif;
-            color:#24364b;
-        ">
+<!DOCTYPE html>
+
+<html lang="es">
+
+<head>
+
+    <meta charset="UTF-8">
+
+</head>
 
 
-            <div style="
-                max-width:650px;
-                margin:auto;
-                background:#ffffff;
-                border-radius:16px;
-                overflow:hidden;
-            ">
+<body
+    style="
+        margin:0;
+        padding:0;
+        background:#F1F5F9;
+        font-family:Arial, Helvetica, sans-serif;
+    "
+>
 
 
-                <!-- ENCABEZADO -->
+<table
+    width="100%"
+    cellspacing="0"
+    cellpadding="0"
+    border="0"
+    style="
+        background:#F1F5F9;
+        padding:35px 15px;
+    "
+>
 
-                <div style="
-                    background:#12365B;
-                    padding:30px;
-                    color:white;
-                ">
+<tr>
+
+<td align="center">
 
 
-                    <div style="
-                        font-size:25px;
+<table
+    width="100%"
+    cellspacing="0"
+    cellpadding="0"
+    border="0"
+    style="
+        max-width:700px;
+        background:white;
+        border-radius:18px;
+        overflow:hidden;
+        box-shadow:0 10px 35px rgba(18,54,91,0.12);
+    "
+>
+
+
+<tr>
+
+<td
+    style="
+        background:#12365B;
+        padding:32px 35px;
+    "
+>
+
+    <table
+        width="100%"
+        cellspacing="0"
+        cellpadding="0"
+        border="0"
+    >
+
+        <tr>
+
+            <td>
+
+                <div
+                    style="
+                        color:#59C3E8;
+                        font-size:12px;
                         font-weight:bold;
-                    ">
+                        letter-spacing:2px;
+                        margin-bottom:8px;
+                    "
+                >
 
-                        ¡Gracias por tu compra!
+                    SISTEMA DE CONCIERTOS
 
-                    </div>
+                </div>
 
 
-                    <div style="
+                <div
+                    style="
+                        color:white;
+                        font-size:28px;
+                        font-weight:bold;
+                    "
+                >
+
+                    Compra confirmada
+
+                </div>
+
+
+                <div
+                    style="
+                        color:#C8D9E8;
+                        font-size:14px;
                         margin-top:8px;
-                        color:#d5e8f7;
-                    ">
+                    "
+                >
 
-                        Tus entradas están listas
+                    Gracias por tu compra
 
-                    </div>
+                </div>
 
+            </td>
+
+
+            <td
+                align="right"
+                style="
+                    color:white;
+                    vertical-align:top;
+                "
+            >
+
+                <div
+                    style="
+                        font-size:12px;
+                        color:#AFC5D8;
+                    "
+                >
+
+                    FACTURA
 
                 </div>
 
 
-                <!-- CONTENIDO -->
+                <div
+                    style="
+                        font-size:18px;
+                        font-weight:bold;
+                        margin-top:5px;
+                    "
+                >
 
-                <div style="
-                    padding:30px;
-                ">
+                    ${escapar(numeroFactura)}
 
+                </div>
 
-                    <p style="
-                        font-size:17px;
-                        margin-top:0;
-                    ">
+            </td>
 
-                        Hola
+        </tr>
 
-                        <strong>
-                            ${escapar(nombreCliente)}
-                        </strong>,
+    </table>
 
-                    </p>
+</td>
 
+</tr>
 
-                    <p style="
-                        color:#56687a;
-                        line-height:1.6;
-                    ">
 
-                        Tu compra fue registrada correctamente.
-                        A continuación encontrarás el resumen
-                        de tus tickets y tu código QR de entrada.
+<tr>
 
-                    </p>
+<td
+    style="
+        padding:35px;
+    "
+>
 
 
-                    <!-- DATOS DE LA COMPRA -->
+    <div
+        style="
+            color:#12365B;
+            font-size:20px;
+            font-weight:bold;
+            margin-bottom:6px;
+        "
+    >
 
-                    <div style="
-                        background:#f5f9fd;
-                        border-radius:10px;
-                        padding:18px;
-                        margin:25px 0;
-                    ">
+        Hola, ${escapar(nombreCliente)}
 
+    </div>
 
-                        <div>
 
-                            <strong>
-                                Factura:
-                            </strong>
+    <div
+        style="
+            color:#718295;
+            font-size:14px;
+            line-height:1.6;
+            margin-bottom:28px;
+        "
+    >
 
-                            ${escapar(numeroFactura)}
+        Tu compra fue registrada correctamente.
+        A continuación encontrarás los detalles
+        y tu código QR de entrada.
 
-                        </div>
+    </div>
 
 
-                        <div style="
-                            margin-top:8px;
-                        ">
+    <table
+        width="100%"
+        cellspacing="0"
+        cellpadding="0"
+        border="0"
+        style="
+            background:#F7FAFC;
+            border-radius:12px;
+            margin-bottom:30px;
+        "
+    >
 
-                            <strong>
-                                Fecha:
-                            </strong>
+        <tr>
 
-                            ${escapar(fechaVenta)}
+            <td
+                style="
+                    padding:18px;
+                "
+            >
 
-                        </div>
+                <div
+                    style="
+                        color:#8797A8;
+                        font-size:11px;
+                        font-weight:bold;
+                    "
+                >
 
-
-                        <div style="
-                            margin-top:8px;
-                        ">
-
-                            <strong>
-                                Método de pago:
-                            </strong>
-
-                            ${escapar(metodoPago)}
-
-                        </div>
-
-
-                    </div>
-
-
-                    <!-- TABLA -->
-
-                    <h3 style="
-                        color:#12365B;
-                        margin-top:30px;
-                    ">
-
-                        Tus tickets
-
-                    </h3>
-
-
-                    <div style="
-                        overflow-x:auto;
-                    ">
-
-
-                        <table style="
-                            width:100%;
-                            border-collapse:collapse;
-                            font-size:14px;
-                        ">
-
-
-                            <thead>
-
-
-                                <tr style="
-                                    background:#20618F;
-                                    color:white;
-                                ">
-
-
-                                    <th style="
-                                        padding:12px;
-                                        text-align:left;
-                                    ">
-
-                                        Ticket
-
-                                    </th>
-
-
-                                    <th style="
-                                        padding:12px;
-                                        text-align:left;
-                                    ">
-
-                                        Sección
-
-                                    </th>
-
-
-                                    <th style="
-                                        padding:12px;
-                                        text-align:center;
-                                    ">
-
-                                        Cant.
-
-                                    </th>
-
-
-                                    <th style="
-                                        padding:12px;
-                                        text-align:right;
-                                    ">
-
-                                        Precio
-
-                                    </th>
-
-
-                                    <th style="
-                                        padding:12px;
-                                        text-align:right;
-                                    ">
-
-                                        Subtotal
-
-                                    </th>
-
-
-                                </tr>
-
-
-                            </thead>
-
-
-                            <tbody>
-
-                                ${filasTickets}
-
-                            </tbody>
-
-
-                        </table>
-
-
-                    </div>
-
-
-                    <!-- TOTAL -->
-
-                    <div style="
-                        text-align:right;
-                        margin-top:25px;
-                        font-size:20px;
-                        color:#12365B;
-                    ">
-
-
-                        <strong>
-
-                            Total:
-                            Q ${Number(total).toFixed(2)}
-
-                        </strong>
-
-
-                    </div>
-
-
-                    <!-- QR -->
-
-                    <div style="
-                        margin-top:40px;
-                        text-align:center;
-                        border-top:1px solid #e5e7eb;
-                        padding-top:30px;
-                    ">
-
-
-                        <h2 style="
-                            color:#12365B;
-                            margin-bottom:10px;
-                        ">
-
-                            Tu código de entrada
-
-                        </h2>
-
-
-                        <p style="
-                            color:#66788b;
-                            line-height:1.5;
-                        ">
-
-                            Este código QR corresponde a toda
-                            tu compra.
-
-                            Consérvalo para solicitar tu ingreso
-                            al concierto.
-
-                        </p>
-
-
-                        <img
-                            src="cid:qrentrada"
-                            width="230"
-                            height="230"
-                            alt="Código QR de entrada"
-                            style="
-                                margin-top:15px;
-                                border-radius:10px;
-                            "
-                        />
-
-
-                        <p style="
-                            color:#98a6b5;
-                            font-size:12px;
-                            margin-top:15px;
-                        ">
-
-                            Un solo QR válido para esta compra.
-
-                        </p>
-
-
-                    </div>
-
-
-                    <div style="
-                        margin-top:35px;
-                        padding:18px;
-                        background:#edf6fb;
-                        border-radius:10px;
-                        color:#3b5368;
-                        text-align:center;
-                    ">
-
-                        Cuando quieras ingresar al evento,
-                        escanea este código QR y solicita
-                        tu entrada.
-
-                    </div>
-
+                    FECHA
 
                 </div>
 
 
-                <!-- FOOTER -->
+                <div
+                    style="
+                        color:#26384A;
+                        font-size:14px;
+                        font-weight:bold;
+                        margin-top:5px;
+                    "
+                >
 
-                <div style="
-                    background:#f6f8fa;
+                    ${escapar(fechaVenta)}
+
+                </div>
+
+            </td>
+
+
+            <td
+                style="
+                    padding:18px;
+                "
+            >
+
+                <div
+                    style="
+                        color:#8797A8;
+                        font-size:11px;
+                        font-weight:bold;
+                    "
+                >
+
+                    MÉTODO DE PAGO
+
+                </div>
+
+
+                <div
+                    style="
+                        color:#26384A;
+                        font-size:14px;
+                        font-weight:bold;
+                        margin-top:5px;
+                    "
+                >
+
+                    ${escapar(metodoPago)}
+
+                </div>
+
+            </td>
+
+
+            <td
+                style="
+                    padding:18px;
+                "
+            >
+
+                <div
+                    style="
+                        color:#8797A8;
+                        font-size:11px;
+                        font-weight:bold;
+                    "
+                >
+
+                    VENTA
+
+                </div>
+
+
+                <div
+                    style="
+                        color:#26384A;
+                        font-size:14px;
+                        font-weight:bold;
+                        margin-top:5px;
+                    "
+                >
+
+                    #${idVenta}
+
+                </div>
+
+            </td>
+
+        </tr>
+
+    </table>
+
+
+    <div
+        style="
+            color:#12365B;
+            font-size:15px;
+            font-weight:bold;
+            margin-bottom:12px;
+        "
+    >
+
+        DETALLE DE TICKETS
+
+    </div>
+
+
+    <table
+        width="100%"
+        cellspacing="0"
+        cellpadding="0"
+        border="0"
+        style="
+            border-collapse:collapse;
+            margin-bottom:25px;
+        "
+    >
+
+        <thead>
+
+            <tr
+                style="
+                    background:#EAF4FA;
+                "
+            >
+
+                <th
+                    align="left"
+                    style="
+                        padding:12px 10px;
+                        color:#20618F;
+                        font-size:12px;
+                    "
+                >
+                    BOLETO
+                </th>
+
+
+                <th
+                    style="
+                        padding:12px 10px;
+                        color:#20618F;
+                        font-size:12px;
+                    "
+                >
+                    SECCIÓN
+                </th>
+
+
+                <th
+                    style="
+                        padding:12px 10px;
+                        color:#20618F;
+                        font-size:12px;
+                    "
+                >
+                    CANT.
+                </th>
+
+
+                <th
+                    align="right"
+                    style="
+                        padding:12px 10px;
+                        color:#20618F;
+                        font-size:12px;
+                    "
+                >
+                    PRECIO
+                </th>
+
+
+                <th
+                    align="right"
+                    style="
+                        padding:12px 10px;
+                        color:#20618F;
+                        font-size:12px;
+                    "
+                >
+                    SUBTOTAL
+                </th>
+
+            </tr>
+
+        </thead>
+
+
+        <tbody>
+
+            ${filasTickets}
+
+        </tbody>
+
+    </table>
+
+
+    <table
+        width="100%"
+        cellspacing="0"
+        cellpadding="0"
+        border="0"
+        style="
+            margin-bottom:35px;
+        "
+    >
+
+        <tr>
+
+            <td></td>
+
+
+            <td
+                width="260"
+                style="
+                    background:#12365B;
+                    border-radius:12px;
                     padding:20px;
-                    text-align:center;
-                    color:#8898a8;
-                    font-size:12px;
-                ">
+                "
+            >
 
-                    Sistema de Gestión de Conciertos
+                <table
+                    width="100%"
+                    cellspacing="0"
+                    cellpadding="0"
+                    border="0"
+                >
+
+                    <tr>
+
+                        <td
+                            style="
+                                color:#C5D7E6;
+                                font-size:13px;
+                            "
+                        >
+
+                            TOTAL PAGADO
+
+                        </td>
+
+
+                        <td
+                            align="right"
+                            style="
+                                color:white;
+                                font-size:24px;
+                                font-weight:bold;
+                            "
+                        >
+
+                            Q${Number(total || 0).toFixed(2)}
+
+                        </td>
+
+                    </tr>
+
+                </table>
+
+            </td>
+
+        </tr>
+
+    </table>
+
+
+    <table
+        width="100%"
+        cellspacing="0"
+        cellpadding="0"
+        border="0"
+        style="
+            background:#F4F8FC;
+            border-radius:16px;
+        "
+    >
+
+        <tr>
+
+            <td
+                align="center"
+                style="
+                    padding:30px;
+                "
+            >
+
+                <div
+                    style="
+                        color:#12365B;
+                        font-size:18px;
+                        font-weight:bold;
+                        margin-bottom:8px;
+                    "
+                >
+
+                    Tu código de entrada
 
                 </div>
 
 
-            </div>
+                <div
+                    style="
+                        color:#75879A;
+                        font-size:13px;
+                        line-height:1.5;
+                        margin-bottom:20px;
+                    "
+                >
+
+                    Escanea este código QR cuando
+                    quieras solicitar tu ingreso.
+
+                </div>
 
 
-        </div>
+                <img
+                    src="cid:qrentrada"
+                    width="220"
+                    height="220"
+                    alt="Código QR de entrada"
+                    style="
+                        display:block;
+                        margin:auto;
+                        background:white;
+                        padding:10px;
+                        border-radius:12px;
+                    "
+                >
+
+
+                <div
+                    style="
+                        margin-top:20px;
+                        color:#8797A8;
+                        font-size:12px;
+                    "
+                >
+
+                    Un código QR único por compra
+
+                </div>
+
+
+                <div
+                    style="
+                        margin-top:18px;
+                    "
+                >
+
+                    <a
+                        href="${urlEntrada}"
+                        style="
+                            display:inline-block;
+                            background:#20618F;
+                            color:white;
+                            text-decoration:none;
+                            font-size:13px;
+                            font-weight:bold;
+                            padding:13px 22px;
+                            border-radius:8px;
+                        "
+                    >
+
+                        ABRIR ENTRADA
+
+                    </a>
+
+                </div>
+
+            </td>
+
+        </tr>
+
+    </table>
+
+
+</td>
+
+</tr>
+
+
+<tr>
+
+<td
+    align="center"
+    style="
+        background:#F8FAFC;
+        padding:22px;
+        color:#9AA7B4;
+        font-size:11px;
+        line-height:1.5;
+    "
+>
+
+    Conserva este correo hasta finalizar
+    tu ingreso al evento.
+
+    <br>
+
+    Sistema de Gestión de Conciertos
+
+</td>
+
+</tr>
+
+
+</table>
+
+
+</td>
+
+</tr>
+
+</table>
+
+
+</body>
+
+</html>
 
         `;
 
 
-
         const resultado =
-                await resend.emails.send({
+            await resend.emails.send({
 
-                    from:
-                        "Sistema de Conciertos <onboarding@resend.dev>",
+                from:
+                    "Sistema de Conciertos <onboarding@resend.dev>",
 
-                    to: [
-                        correo
-                    ],
+                to: [
+                    correo
+                ],
 
-                    subject:
-                        `Compra confirmada - ${numeroFactura}`,
+                subject:
+                    `Compra confirmada - ${numeroFactura}`,
 
-                    html:
-                        htmlCorreo,
+                html:
+                    htmlCorreo,
 
-                    attachments: [
+                attachments: [
 
-                        {
+                    {
 
-                            filename:
-                                `QR-${numeroFactura}.png`,
+                        filename:
+                            `QR-${numeroFactura}.png`,
 
-                            content:
-                                qrBase64,
+                        content:
+                            qrBase64,
 
-                            contentId:
-                                "qrentrada"
+                        contentId:
+                            "qrentrada"
 
-                        }
+                    }
 
-                    ]
+                ]
 
-                });
-
+            });
 
 
         if (resultado.error) {
@@ -644,18 +958,13 @@ exports.enviarCorreoCompra = async (req, res) => {
             return res.status(500).send({
 
                 message:
-                    resultado.error.message ||
-                    "Error al enviar el correo"
+                    resultado.error.message
+                    ||
+                    "Error al enviar correo"
 
             });
+
         }
-
-
-
-        console.log(
-            "CORREO ENVIADO CON RESEND:",
-            resultado.data
-        );
 
 
         res.send({
@@ -670,16 +979,16 @@ exports.enviarCorreoCompra = async (req, res) => {
                 entrada.estado,
 
             id_correo:
-                resultado.data?.id || null
+                resultado.data?.id
+                || null
 
         });
 
 
     } catch (error) {
 
-
         console.error(
-            "ERROR EN CORREO:",
+            "ERROR CORREO:",
             error
         );
 
@@ -687,8 +996,9 @@ exports.enviarCorreoCompra = async (req, res) => {
         res.status(500).send({
 
             message:
-                error.message ||
-                "Error al enviar el correo"
+                error.message
+                ||
+                "Error al enviar correo"
 
         });
 
