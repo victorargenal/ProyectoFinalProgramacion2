@@ -45,6 +45,8 @@ require("./app/routes/carritoAPI.routes")(app);
 
 require("./app/routes/liquidacionAPI.routes")(app);
 
+require("./app/routes/correoAPI.routes")(app);
+
 
 const PORT = process.env.PORT || 8081;
 app.listen(PORT, () => {
